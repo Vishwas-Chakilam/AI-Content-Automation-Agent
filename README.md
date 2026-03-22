@@ -54,4 +54,4 @@ You can run this project in several ways:
 - Affiliate marketing automation
 
 ## 👨💻 Author
-Vishwas
+Vishwas Chakilam
