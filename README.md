@@ -38,6 +38,12 @@ BLOGGER_CLIENT_SECRET=
 2. Set credentials (API keys)
 3. Execute workflow
 
+## 🌐 Deployment Options
+You can run this project in several ways:
+- **Local n8n**: Run n8n locally on your machine.
+- **n8n Cloud**: Use the paid n8n cloud service.
+- **Render**: Deploy n8n for free on Render.
+
 ## 📸 Screenshots
 
 ![Workflow](screenshots/workflow.png)
