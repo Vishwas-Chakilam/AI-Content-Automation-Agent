@@ -1,0 +1,466 @@
+{
+  "name": "Generate & publish SEO blog posts to Blogger using OpenRouter AI & Mediastack News",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "id": "86c9ee32-ba63-4a07-a1e6-62f964f706b7",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        432,
+        304
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "content": "## Create Title, Slug & Meta\n",
+        "height": 400,
+        "width": 710,
+        "color": 7
+      },
+      "id": "489847e0-e119-49c7-b64f-116943472e6a",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2128,
+        208
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 220,
+        "color": 4
+      },
+      "id": "ea71fac4-238b-4ed8-9e12-390b76993b3d",
+      "name": "Sticky Note12",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        368,
+        240
+      ],
+      "typeVersion": 1,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "chatId": "$vars.telegramchatid",
+        "text": "=Success! Your blog post was created at {{ $now }} \ntitle : {{ $('Parsing').item.json.title }}",
+        "additionalFields": {}
+      },
+      "id": "d7bbe474-1314-4126-91e5-37417717a1ce",
+      "name": "Send a text message",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        4240,
+        304
+      ],
+      "webhookId": "ef34cf8c-ba06-4d6a-9b81-8442ad9b30cb",
+      "typeVersion": 1.2,
+      "alwaysOutputData": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "b0AYOHtxtDBwTpsr",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://api.mediastack.com/v1/news?categories=technology&limit=1&languages=en",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "options": {}
+      },
+      "id": "b074b82d-0989-47ee-8835-8a38f95cd617",
+      "name": "Mediastack News",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        1248,
+        320
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "zLz7bUyOQuE3TQMV",
+          "name": "Query Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Write SEO Optimized Blog Post\n\n\n",
+        "height": 380,
+        "width": 584,
+        "color": 3
+      },
+      "id": "a2a9fb36-f8d7-4aad-bf85-5213754d1fc8",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3052,
+        224
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Act as an SEO blog writer.\n\nWrite a 1000-word blog post in clean HTML format.\n\nTitle: {{ $('Parsing').first().json.title }}\nKeyword: {{ $('Parsing').first().json.slug }}\n\nRequirements:\n- Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>\n- Ensure all tags are properly closed\n- Do NOT break HTML\n- Do NOT minify or compress HTML\n\nStructure:\n- Title (H2)\n- Introduction\n- Key takeaways (bullet points)\n- Table of contents\n- Main sections with headings\n- Conclusion\n- FAQs\n\nSEO:\n- Use keyword naturally\n- Include keyword in first 100 words\n\n-----------------------------------\n\nUse these images in the blog.\n\nYou MUST include both images.\n\nImage 1 URL:\n{{ $json.data[0].photos[0].src.original }}\nImage 1 Alt:\n\n{{ $json.data[0].photos[0].alt }}\nImage 2 URL:\n\n{{ $json.data[0].photos[1].src.original }}\nImage 2 Alt:\n\n{{ $json.data[0].photos[1].alt }}\n-----------------------------------\n\nImage Instructions:\n- Place Image 1 after the introduction\n- Place Image 2 in the middle of the article\n- Use this exact HTML format:\n\n\n\n- Do NOT skip images\n- Do NOT change URLs\n\n-----------------------------------\n\nOutput:\nReturn ONLY valid HTML\nDo NOT include explanations\nDo NOT wrap in code blocks",
+        "options": {}
+      },
+      "id": "1e647313-6fd6-4c3f-9f9b-f4763db57fd9",
+      "name": "Copywriter AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        3296,
+        304
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "content": "Get NEWS",
+        "height": 280,
+        "width": 340,
+        "color": 4
+      },
+      "id": "a406d8d5-4582-4c2f-9f97-d380cb099aea",
+      "name": "Sticky Note8",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1136,
+        256
+      ],
+      "typeVersion": 1,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0afb2988-1481-4b04-b16d-fb33c50a16d0",
+              "name": "content",
+              "type": "string",
+              "value": "={{ $json.output.replaceAll('```html', '').replaceAll('```','') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "df6976ce-a924-4fa8-a84b-f21f5e957b1c",
+      "name": "Cleanup HTML ",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        3808,
+        304
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a slug, blog post title, meta description, and SEO labels for the following blog post:\n\n{{ $json.data[0].title }}\n\nSlug Guidelines:\n- Keep it concise (4-5 words maximum)\n- Include primary keyword related to recruitment or HR\n- Use hyphens\n- Avoid unnecessary words\n\nTitle Guidelines:\n- No colon (:)\n- Include primary keyword\n- 50–60 characters\n- Clear and engaging\n\nMeta Description Guidelines:\n- 150–160 characters\n- Include keywords naturally\n- Action-oriented and engaging\n- Reflect blog content accurately\n\nLabels Guidelines:\n- Generate 3 to 5 SEO-friendly labels\n- Each label should be 1–3 words only\n- Focus on recruitment, HR, AI, hiring topics\n- Avoid long sentences\n\nOutput format:\nReturn ONLY a valid JSON object with these fields:\nslug, title, meta, labels\n\nExample:\n{\n  \"slug\": \"ai-talent-acquisition\",\n  \"title\": \"AI in Talent Acquisition Trends\",\n  \"meta\": \"Explore how AI is improving hiring processes...\",\n  \"labels\": [\"AI Hiring\", \"Recruitment\", \"HR Tech\"]\n\n}",
+        "options": {}
+      },
+      "id": "f16a6603-9703-48b9-bb9a-d759c2993169",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        2208,
+        304
+      ],
+      "typeVersion": 2,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawInput = $input.first().json.output;\nconst cleaned = rawInput.replace(/```json|```/g, '').trim();\nconst jsonObject = JSON.parse(cleaned);\nreturn [jsonObject];\n"
+      },
+      "id": "4a4e3d8c-3fd5-44d6-8d76-7344b973d715",
+      "name": "Parsing",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2592,
+        304
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.googleapis.com/blogger/v3/blogs/7106841588465616243/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  kind: \"blogger#post\",\n  blog: {\n    id: \"7106841588465616243\"\n  },\n\n  title: $('Parsing').first().json.title,\n\n  content: \"<meta name='description' content='\" \n            + $('Parsing').first().json.meta + \n            \"'>\" + $json.content,\n\n  labels: $('Parsing').first().json.labels,\n\n  status: \"LIVE\",\n  isDraft: false\n} }}",
+        "options": {}
+      },
+      "id": "b6e78c05-8b99-4bf0-9b06-4846e1425b45",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        4016,
+        304
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "oAuth2Api": {
+          "id": "xgoLaOiPzILY9Lkn",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.pexels.com/v1/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.title }}"
+            },
+            {
+              "name": "per_page",
+              "value": "2"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3499d257-993a-4f00-9aa0-458b1ef356d2",
+      "name": "Genarate image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        2864,
+        448
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "iVSHBukrFL3Z4KBp",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        496
+      ],
+      "id": "70a737c2-0675-4989-bbde-87355759cfe7",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "iWcnUDa1LwwuezEo",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3296,
+        480
+      ],
+      "id": "0ca2bc5c-ebeb-44e7-ae95-346432d9d10c",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "iWcnUDa1LwwuezEo",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        3024,
+        304
+      ],
+      "id": "c9a52565-bbbe-4619-8ba9-09a145c956b8",
+      "name": "Aggregate"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Parsing": {
+      "main": [
+        [
+          {
+            "node": "Genarate image",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parsing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleanup HTML ": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Genarate image": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mediastack News": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Mediastack News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copywriter AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Cleanup HTML ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Copywriter AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Copywriter AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5775e710-14eb-47f6-af6f-4ea229b281ca",
+  "meta": {
+    "templateId": "6015",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0178280482d4376b1ee83d0d085b658de80740f25f547b95dd9e776115e5fc6d"
+  },
+  "id": "MOZr2msdRIYPfnss",
+  "tags": []
+}
