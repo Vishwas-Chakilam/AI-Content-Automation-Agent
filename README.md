@@ -46,7 +46,7 @@ You can run this project in several ways:
 
 ## 📸 Screenshots
 
-![Workflow](screenshots/workflow.png)
+![Workflow](screenshots/img1.png)
 
 ## 📈 Use Case
 - Automated blogging
