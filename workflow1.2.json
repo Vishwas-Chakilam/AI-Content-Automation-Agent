@@ -1,0 +1,739 @@
+{
+  "name": "AI Content Automation Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "id": "86c9ee32-ba63-4a07-a1e6-62f964f706b7",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        432,
+        576
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a 1000-word blog post in clean HTML format.\n\nTitle: {{ $('Parsing').item.json.title }}\nKeyword: {{ $('Parsing').item.json.slug }}\n\nRequirements:\n- Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>\n- Ensure all tags are properly closed\n- Do NOT break HTML\n- Do NOT minify or compress HTML\n\nStructure:\n- Title (H2)\n- Introduction\n- Key takeaways (bullet points)\n- Table of contents\n- Main sections with headings\n- Conclusion\n- FAQs\n\nSEO:\n- Use keyword naturally\n- Include keyword in first 100 words\n\n-----------------------------------\n\nUse these images in the blog.\n\nYou MUST include both images.\n\nImage 1 URL:\n{{ $('Genarate image').item.json.photos[0].src.original }}\nImage 1 Alt:\n{{ $('Genarate image').item.json.photos[0].alt }}\n\nImage 2 URL:\n{{ $('Genarate image').item.json.photos[1].src.original }}\nImage 2 Alt:\n{{ $('Genarate image').item.json.photos[1].alt }}\n-----------------------------------\n\nImage Instructions:\n- Place Image 1 after the introduction\n- Place Image 2 in the middle of the article\n- Use this exact HTML format:\n<img src=\"URL\" alt=\"ALT_TEXT\" />\n\n- Do NOT skip images\n- Do NOT change URLs\n\n-----------------------------------\n\nOutput:\nReturn ONLY valid HTML\nDo NOT include explanations\nDo NOT wrap in code blocks",
+        "options": {
+          "systemMessage": "You are an SEO blog writer specializing in Technology, IT and Corporate content. Write in a Professional Peer tonality - be concise and efficient."
+        }
+      },
+      "id": "1e647313-6fd6-4c3f-9f9b-f4763db57fd9",
+      "name": "Copywriter AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        2800,
+        304
+      ],
+      "typeVersion": 3.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0afb2988-1481-4b04-b16d-fb33c50a16d0",
+              "name": "content",
+              "type": "string",
+              "value": "={{ $(\"Copywriter AI Agent\").item.json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "df6976ce-a924-4fa8-a84b-f21f5e957b1c",
+      "name": "Cleanup HTML ",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        3152,
+        304
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a slug, blog post title, meta description, and SEO labels for the following topic:\n\nTitle: {{ $json.title }}\nDescription: {{ $json.description }}\n\nSlug Guidelines:\n- Keep it concise (4-5 words maximum)\n- Include primary keyword related to technology\n- Use hyphens\n- Avoid unnecessary words\n\nTitle Guidelines:\n- No colon (:)\n- Include primary keyword\n- 50–60 characters\n- Clear and engaging\n\nMeta Description Guidelines:\n- 150–160 characters\n- Include keywords naturally\n- Action-oriented and engaging\n- Reflect blog content accurately\n\nLabels Guidelines:\n- Generate 3 to 5 SEO-friendly labels\n- Each label should be 1–3 words only\n- Focus on technology topics\n- Avoid long sentences\n\nOutput format:\nReturn ONLY a valid JSON object with these fields:\nslug, title, meta, labels\n\nExample:\n{\n  \"slug\": \"ai-healthcare-revolution\",\n  \"title\": \"AI Transforming Healthcare in 2024\",\n  \"meta\": \"Explore how AI is revolutionizing medical diagnostics...\",\n  \"labels\": [\"AI\", \"Healthcare\", \"Technology\"]\n}",
+        "options": {
+          "systemMessage": "You are an SEO content strategist specializing in Technology, IT and Corporate topics. Use a Professional Peer tonality - be concise and efficient."
+        }
+      },
+      "id": "f16a6603-9703-48b9-bb9a-d759c2993169",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        1552,
+        304
+      ],
+      "typeVersion": 3.1,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawInput = $input.first().json.output;\nconst cleaned = rawInput.replace(/```json|```/g, '').trim();\nconst jsonObject = JSON.parse(cleaned);\nreturn [jsonObject];\n"
+      },
+      "id": "4a4e3d8c-3fd5-44d6-8d76-7344b973d715",
+      "name": "Parsing",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        1904,
+        304
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.googleapis.com/blogger/v3/blogs/7106841588465616243/posts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"kind\": \"blogger#post\", \"blog\": { \"id\": \"7106841588465616243\" }, \"title\": $(\"Parsing\").item.json.title, \"content\": \"<meta name='description' content='\" + $(\"Parsing\").item.json.meta + \"'>\" + $(\"Cleanup HTML \").item.json.content, \"labels\": $(\"Parsing\").item.json.labels, \"status\": \"LIVE\", \"isDraft\": false } }}",
+        "options": {}
+      },
+      "id": "b6e78c05-8b99-4bf0-9b06-4846e1425b45",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        4400,
+        480
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "oAuth2Api": {
+          "id": "xgoLaOiPzILY9Lkn",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.pexels.com/v1/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $('Parsing').item.json.title }}"
+            },
+            {
+              "name": "per_page",
+              "value": "2"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3499d257-993a-4f00-9aa0-458b1ef356d2",
+      "name": "Genarate image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        2352,
+        304
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "iVSHBukrFL3Z4KBp",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Fetch 10 Trending Topics\n\nUses Hacker News API (free) to get trending technology stories",
+        "height": 280,
+        "width": 520,
+        "color": 4
+      },
+      "id": "9b972ddf-6e2c-48b9-a84f-54c76857f028",
+      "name": "Sticky Note8",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        448,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Create Title, Slug & Meta\n\nGenre: Technology, IT and Corporate\nTonality: Professional Peer",
+        "height": 400,
+        "width": 460,
+        "color": 7
+      },
+      "id": "923a08dd-a0e7-48c9-a687-8c833d8ad5aa",
+      "name": "Sticky Note7",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        480,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Write SEO Optimized Blog Post\n\nProfessional Peer tone\nConcise and efficient",
+        "height": 380,
+        "width": 584,
+        "color": 3
+      },
+      "id": "fdfeeadd-372c-4caf-8537-a02de98e7ac1",
+      "name": "Sticky Note6",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3424,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "all",
+        "limit": 10,
+        "additionalFields": {
+          "tags": [
+            "story",
+            "front_page"
+          ]
+        }
+      },
+      "id": "0b50d6a6-0725-4a3f-8ca6-f3273766371b",
+      "name": "Fetch Trending Topics",
+      "type": "n8n-nodes-base.hackerNews",
+      "typeVersion": 1,
+      "position": [
+        656,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "title",
+              "type": "string",
+              "value": "={{ $json.title }}"
+            },
+            {
+              "id": "2",
+              "name": "description",
+              "type": "string",
+              "value": "={{ $json.url }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6d2c2f9b-86e7-412b-8b85-ed60e1c00131",
+      "name": "Parse Topics",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        576
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "7a69121c-6428-4d38-a312-9e6caaae82d0",
+      "name": "Done Processing",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following blog post HTML content: {{ $('Cleanup HTML ').item.json.content }} Perform these checks: 1. Tone Check: Does it match \"Professional Peer\" tonality? Is it concise and efficient? 2. Readability Score: Is the content easy to read? (Flesch Reading Ease equivalent) 3. Keyword Density: Is the keyword \"{{ $('Parsing').item.json.slug }}\" used naturally (1-3% density)? 4. Human Content: Does it sound natural and human-written, not robotic? Return ONLY a JSON object: { \"toneScore\": 0-100, \"readabilityScore\": 0-100, \"keywordDensity\": 0-100, \"humanScore\": 0-100, \"overallScore\": 0-100, \"passed\": true/false, \"feedback\": \"Brief feedback\" } Pass threshold: overallScore >= 70",
+        "options": {
+          "systemMessage": "You are a content quality analyzer for Technology, IT and Corporate blog posts. Evaluate tone, readability, keyword usage, and human-like writing quality."
+        }
+      },
+      "id": "0e582e95-740b-4d6a-9c77-fabf3c04f7b5",
+      "name": "Quality Check Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3600,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawInput = $input.first().json.output;\nconst cleaned = rawInput.replace(/```json|```/g, '').trim();\nconst qualityData = JSON.parse(cleaned);\nreturn [qualityData];"
+      },
+      "id": "9a3dd3ac-62ff-4206-ad14-fd74294c3b5d",
+      "name": "Parse Quality Score",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3952,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.passed }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              },
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d77adb3d-a657-4a97-98c3-e8b89b787110",
+      "name": "Check Quality Pass",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4176,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "id": "160f7319-166a-4708-a30a-26f495378aa2",
+      "name": "Loop Over Topics",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1104,
+        576
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Quality Check\n\nTone, readability, keyword density, human content\nOnly publish if score >= 70",
+        "height": 320,
+        "width": 680,
+        "color": 5
+      },
+      "id": "3a7e3150-abde-47d6-b779-711474a27027",
+      "name": "Sticky Note9",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2976,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "afc8ba4b-0fa9-40e9-b6e7-06bfb703ee63",
+      "name": "Google Gemini Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3680,
+        528
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "iWcnUDa1LwwuezEo",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "id": "f248a28f-1d79-4ae9-90f6-0535ed74d6c8",
+      "name": "Wait Before SEO",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1328,
+        304
+      ],
+      "webhookId": "a5e601e5-00db-48d0-99b9-2122d52be07e"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "id": "985edab7-f691-4bb8-a8e0-dc0e53a0031f",
+      "name": "Wait Before Image",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2128,
+        304
+      ],
+      "webhookId": "4b13e945-b7c8-417a-9c99-894715ea05d6"
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "id": "264841b6-b311-4b05-b1ad-28ff06d58de6",
+      "name": "Wait Before Copywriter",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2576,
+        304
+      ],
+      "webhookId": "6c3a98c8-765f-4155-a40e-704a8e4f45c3"
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "id": "26021c91-97c9-40cc-86c4-ff4cdb56f868",
+      "name": "Wait Before Quality",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3376,
+        304
+      ],
+      "webhookId": "1dc24b4d-7522-461f-89c5-05e79a30b865"
+    },
+    {
+      "parameters": {
+        "content": "## Rate Limiting\n\nWait nodes prevent API rate limit errors from Google Gemini",
+        "height": 240,
+        "width": 480,
+        "color": 6
+      },
+      "id": "42633e7e-9473-4176-852d-b5205431b4d8",
+      "name": "Sticky Note10",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1584,
+        512
+      ],
+      "id": "68ff2edd-5919-4017-b72f-72cb54e31630",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "iWcnUDa1LwwuezEo",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2672,
+        512
+      ],
+      "id": "5cf35e2b-15e6-4d26-a94f-2208c6c9882c",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "iWcnUDa1LwwuezEo",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Parsing": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Parsing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cleanup HTML ": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Genarate image": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Copywriter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Trending Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copywriter AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Cleanup HTML ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Trending Topics": {
+      "main": [
+        [
+          {
+            "node": "Parse Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Topics": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quality Check Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Quality Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Quality Score": {
+      "main": [
+        [
+          {
+            "node": "Check Quality Pass",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Quality Pass": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Topics": {
+      "main": [
+        [
+          {
+            "node": "Done Processing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait Before SEO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Quality Check Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before SEO": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before Image": {
+      "main": [
+        [
+          {
+            "node": "Genarate image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before Copywriter": {
+      "main": [
+        [
+          {
+            "node": "Copywriter AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before Quality": {
+      "main": [
+        [
+          {
+            "node": "Quality Check Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Copywriter AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ad2e5f71-6abc-4e85-9c89-299b502fb3a3",
+  "meta": {
+    "templateId": "6015",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0178280482d4376b1ee83d0d085b658de80740f25f547b95dd9e776115e5fc6d"
+  },
+  "id": "MOZr2msdRIYPfnss",
+  "tags": []
+}
